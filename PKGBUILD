@@ -4,6 +4,7 @@
 # Maintainer: Pellegrino Prevete (tallero) <pellegrinoprevete@gmail.com>
 # Maintainer: Daniel Bermond <dbermond@archlinux.org>
 
+_git="false"
 _pkg=lcevcdec
 _Pkg="LCEVCdec"
 pkgname="${_pkg}"
@@ -26,30 +27,49 @@ depends=(
   'fmt'
 )
 makedepends=(
-  'git'
   'cmake'
   'python'
   'range-v3'
   'rapidjson'
 )
+_tarname="${_pkg}-${pkgver}"
+_tag_name="pkgver"
+_tag="${pkgver}"
+if [[ "${_git}" == true ]]; then
+  makedepends+=(
+    "git"
+  )
+  _src="${_tarname}::git+${_url}#${_tag_name}=${_tag}?signed"
+  _sum="SKIP"
+elif [[ "${_git}" == false ]]; then
+  if [[ "${_tag_name}" == 'pkgver' ]]; then
+    _src="${_tarname}.tar.gz::${_url}/archive/refs/tags/${_tag}.tar.gz"
+    _sum="d4f4179c6e4ce1702c5fe6af132669e8ec4d0378428f69518f2926b969663a91"
+  elif [[ "${_tag_name}" == "commit" ]]; then
+    _src="${_tarname}.zip::${_url}/archive/${_commit}.zip"
+    _sum='a7c3d4689e85d69c45e8dc2003ca339b6613787845f8dc0c88cb6b57a3989634'
+  fi
+fi
 source=(
-  "git+${url}.git#tag=${pkgver}"
+  "${_src}"
   "010-${_pkg}-fix-pkgconfig-prefix.patch"
   "020-${_pkg}-fix__builtin_clzg-arguments.patch::${url}/commit/43ef5a17ec1ced77f834136945b3cbfe2e46b9b4.patch"
 )
 sha256sums=(
+  "${_sum}"
   '1e6b110e235ddcbc124f3fd1c8a7c7fa1603ec08dbc8b58c59c8f1a8995c9c0b'
   '8d4ed24ba3407f9ebb8397960bfebeebcd973f3f3febad6b52768530451d5b73'
-  '940faa1bdd443841113f0b3e35200bee3a6f088d6353cc31d49ac5e598343856')
+  '940faa1bdd443841113f0b3e35200bee3a6f088d6353cc31d49ac5e598343856'
+)
 
 prepare() {
     patch \
-      -d "${_Pkg}" \
+      -d "${_tarname}" \
       -Np1 \
       -i \
       "${srcdir}/010-${_pkg}-fix-pkgconfig-prefix.patch"
     patch \
-      -d "${_Pkg}" \
+      -d "${_tarname}" \
       -Np1 \
       -i \
     "${srcdir}/020-${_pkg}-fix__builtin_clzg-arguments.patch"
@@ -69,7 +89,7 @@ build() {
   cmake \
     -B \
       build \
-    -S "${_Pkg}" \
+    -S "${_tarname}" \
     "${_cmake_opts[@]}"
   cmake \
     --build \
@@ -93,7 +113,7 @@ package() {
     "${pkgdir}/usr/lib"
   install \
     -Dm644 \
-    "${_Pkg}/LICENSE.md" \
+    "${_tarname}/LICENSE.md" \
     -t \
     "${pkgdir}/usr/share/licenses/${pkgname}"
   rm \

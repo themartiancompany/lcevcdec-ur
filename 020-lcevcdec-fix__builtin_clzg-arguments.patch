@@ -1,0 +1,46 @@
+From 43ef5a17ec1ced77f834136945b3cbfe2e46b9b4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Olivier=20Cr=C3=AAte?= <olivier.crete@collabora.com>
+Date: Mon, 15 Jul 2024 12:42:20 -0400
+Subject: [PATCH] The __builtin_clzg built-in takes a unsigned as first arg and
+ a int as a second
+
+---
+ src/core/decoder/src/decode/huffman.c | 4 ++--
+ src/utility/src/math_utils.h          | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/core/decoder/src/decode/huffman.c b/src/core/decoder/src/decode/huffman.c
+index 05b93e4..8934c67 100644
+--- a/src/core/decoder/src/decode/huffman.c
++++ b/src/core/decoder/src/decode/huffman.c
+@@ -21,7 +21,7 @@
+ 
+ /*- General utility functions -------------------------------------------------------------------*/
+ 
+-static inline uint8_t clz(int32_t streamData, uint8_t numBits)
++static inline uint8_t clz(uint32_t streamData, uint8_t numBits)
+ {
+ #if defined WIN32
+     return (uint8_t)(_lzcnt_u32(streamData) + numBits - 32);
+@@ -29,7 +29,7 @@ static inline uint8_t clz(int32_t streamData, uint8_t numBits)
+     /* Annoyingly, it's undefined behaviour if you provide 0 to __builtin_clz. To match the Windows
+      * behaviour (where 0 is just another leading zero), we need clzg, with sizeof(streamData) as
+      * the default arg. */
+-    return (uint8_t)(__builtin_clzg(streamData, (sizeof(streamData) * 8)) + numBits - 32);
++    return (uint8_t)(__builtin_clzg(streamData, (int) (sizeof(streamData) * 8)) + numBits - 32);
+ #else
+     /* clzg is only available in GCC version 14 or later. Outside that, we just do it manually. */
+     if (streamData == 0) {
+diff --git a/src/utility/src/math_utils.h b/src/utility/src/math_utils.h
+index 070b183..7f627d7 100644
+--- a/src/utility/src/math_utils.h
++++ b/src/utility/src/math_utils.h
+@@ -32,7 +32,7 @@ static inline uint8_t clz(uint32_t n)
+ #if defined WIN32
+     return (uint8_t)(_lzcnt_u32(n));
+ #elif defined __linux__ && (__GNUC__ >= 14)
+-    return (uint8_t)(__builtin_clzg(n, (8 * sizeof(n)));
++    return (uint8_t)(__builtin_clzg(n, (int) (8 * sizeof(n))));
+ #else
+     if (n == 0) {
+         return (8 * sizeof(n));
