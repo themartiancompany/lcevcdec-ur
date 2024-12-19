@@ -139,7 +139,7 @@ package() {
     --install \
       "build"
   mv \
-    "${pkgdir}/usr/pkgconfig"
+    "${pkgdir}/usr/pkgconfig" \
     "${pkgdir}/usr/lib"
   install \
     -Dm644 \
